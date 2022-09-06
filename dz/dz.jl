@@ -56,5 +56,41 @@ module dz
             putmarker!(r)
         end
     end
-    MakeObliqueCross()
+
+    function FillField()::Nothing
+        while(isborder(r,Ost) == false && isborder(r,Nord) == false)
+            while(isborder(r,Ost) == false)
+                putmarker!(r)
+                move!(r,Ost)
+            end
+            putmarker!(r)
+            move!(r,Nord)
+            while(isborder(r,West) == false)
+                putmarker!(r)
+                move!(r,West)
+            end
+            putmarker!(r)
+            move!(r,Nord)
+        end
+    end
+
+    function MakePerimeter()::Nothing 
+        while(isborder(r,Ost) == false)
+            putmarker!(r)
+            move!(r, Ost)
+        end
+        while(isborder(r,Nord) == false)
+            putmarker!(r)
+            move!(r, Nord)
+        end
+        while(isborder(r,West) == false)
+            putmarker!(r)
+            move!(r, West)
+        end
+        while(isborder(r,Sud) == false)
+            putmarker!(r)
+            move!(r, Sud)
+        end
+    end
+
 end 
