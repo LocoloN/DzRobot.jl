@@ -1,6 +1,6 @@
 module dz
 
-    include("..\\src\\HorizonSideRobots.jl")
+    include("..\src\HorizonSideRobots.jl")
     using .HorizonSideRobots
 
     r = Robot(animate = true)
