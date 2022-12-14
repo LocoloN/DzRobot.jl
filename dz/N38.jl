@@ -9,7 +9,7 @@ end
 return false
 end
 
-function CheckTurn(current::HorizonSide, previous::HorizonSide)::Integer
+function CheckTurn(current::HorizonSide, previous::HorizonSide)::Integer # 1-левый поворот, 2 - правый поворот, 0-нет поворота
 
     if(current == previous)
         return 0
@@ -23,11 +23,45 @@ function CheckTurn(current::HorizonSide, previous::HorizonSide)::Integer
 
 end
 
-function StopCondition()::Bool
+abstract type AbstractRobot 
+end
+
+struct GenericRobot <: AbstractRobot
+robot::Robot
+end
+
+function StopCondition(coord::AbstractVector{Integer},
+    startDir::HorizonSide,
+    currentDir::HorizonSide)::Bool
+    
+    if (coord[1]==0 && coord[2]==0 && startDir == currentDir)
+        return true
+    end  
+    return false
+end
+
+function Summary(turns::AbstractVector{Integer})::Int8 # 0-внутри 1-снаружи 2-ошибка
+    if (turns[1] > turns[2])
+        return 0
+    end
+    if (turns[1] < turns[2])
+        return 1
+    end
+    if (turns[1] == turns[2])
+        return 2
+    end
     
 end
 
-function AroundBorder(r)::Int8 # 0-внутри 1-снаружи 2-ошибка
+function GetRobot(r::GenericRobot)::Robot
+    return r.robot
+end
+
+TryMove(r::AbstractRobot,side::HorizonSide) = TryMove(GetRobot(r),side)
+ChooseDirection(r::AbstractRobot, direction::HorizonSide) = ChooseDirection(GetRobot(r), direction)
+ChooseFirstDirection(r::AbstractRobot) = ChooseFirstDirection(GetRobot(r))
+
+function AroundBorder(r::AbstractRobot)::Int8 
     
     turns::AbstractVector{Integer} = [0,0]
 
@@ -60,16 +94,8 @@ function AroundBorder(r)::Int8 # 0-внутри 1-снаружи 2-ошибка
             ChooseDirection(r,direction)
         end                                                      
         
-        if (coord[1]==0 && coord[2]==0 && startDirection == direction)
-            if (turns[1] > turns[2])
-                return 0
-            end
-            if (turns[1] < turns[2])
-                return 1
-            end
-            if (turns[1] == turns[2])
-                return 2
-            end
+        if (StopCondition(coord,startDirection,direction))
+            return Summary(turns)
             break
         end  
     end
