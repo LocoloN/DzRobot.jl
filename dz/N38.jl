@@ -1,15 +1,14 @@
 using HorizonSideRobots
 
-
-function TryMove(r::Robot,side::HorizonSide)::Bool
-if(!isborder(r,side))
-    move!(r,side)
-    return true
+function TryMove(r::Robot,side::HorizonSide)::Bool # Если робот может пойти по направлению, то он идёт и возвращается true, иначе не идёт и false
+    if(!isborder(r,side))
+        move!(r,side)
+        return true
+    end
+    return false
 end
-return false
-end
 
-function CheckTurn(current::HorizonSide, previous::HorizonSide)::Integer # 1-левый поворот, 2 - правый поворот, 0-нет поворота
+function CheckTurn(current::HorizonSide, previous::HorizonSide)::Integer # Проверяет правый поворот или левый 1-левый поворот, 2 - правый поворот, 0-нет поворота
 
     if(current == previous)
         return 0
@@ -20,27 +19,28 @@ function CheckTurn(current::HorizonSide, previous::HorizonSide)::Integer # 1-л�
     if(current == TurnRight(previous))
         return 2
     end
-
+    return 0
 end
 
-abstract type AbstractRobot 
+abstract type AbstractRobot # Абстрактный тип робота
 end
 
-struct GenericRobot <: AbstractRobot
-robot::Robot
+struct GenericRobot <: AbstractRobot # Конкретный тип робота
+    robot::Robot
 end
 
-function StopCondition(coord::AbstractVector{Integer},
+function StopCondition(
+    coordinate::AbstractVector{Integer},
     startDir::HorizonSide,
-    currentDir::HorizonSide)::Bool
+    currentDir::HorizonSide)::Bool # проверяет условие остановки true если надо остановиться
     
-    if (coord[1]==0 && coord[2]==0 && startDir == currentDir)
+    if (coordinate[1]==0 && coordinate[2]==0 && startDir == currentDir)
         return true
     end  
     return false
 end
 
-function Summary(turns::AbstractVector{Integer})::Int8 # 0-внутри 1-снаружи 2-ошибка
+function Summary(turns::AbstractVector{Integer})::Int8 # Делает заключение снаружи робот или внутри 0-внутри 1-снаружи 2-ошибка
     if (turns[1] > turns[2])
         return 0
     end
@@ -50,39 +50,42 @@ function Summary(turns::AbstractVector{Integer})::Int8 # 0-внутри 1-сна
     if (turns[1] == turns[2])
         return 2
     end
-    
 end
 
-function GetRobot(r::GenericRobot)::Robot
+function GetRobot(r::GenericRobot)::Robot # Вытаскивает переменную робот из GenericRobot
     return r.robot
 end
 
+#Следующие три строки переопределяют функции для типа AbstractRobot
 TryMove(r::AbstractRobot,side::HorizonSide) = TryMove(GetRobot(r),side)
 ChooseDirection(r::AbstractRobot, direction::HorizonSide) = ChooseDirection(GetRobot(r), direction)
 ChooseFirstDirection(r::AbstractRobot) = ChooseFirstDirection(GetRobot(r))
 
-function AroundBorder(r::AbstractRobot)::Int8 
-    
-    turns::AbstractVector{Integer} = [0,0]
 
+
+function AroundBorder(r::AbstractRobot)::Int8 # Главная функция которая запускает движение робота и в конце определяет его положение
+    #инициализация нужных для работы переменных 
     direction::HorizonSide = Nord
     previousMoveDirection::HorizonSide = Nord
-    direction = ChooseFirstDirection(r)
     startDirection::HorizonSide = direction
-    
-    coord::AbstractVector{Integer} = [0,0]
+    turns::AbstractVector{Integer} = [0,0] #1-левый поворот, 2 - правый поворот
+    coordinate::AbstractVector{Integer} = [0,0] 
 
+    direction = ChooseFirstDirection(r)
+    #основной цикл в котором робот движется, устанавливает свою относительную координату и проверяет сделал ли он поворот
     while (true)
         if (TryMove(r,direction))
-            previousMoveDirection = direction
 
+            previousMoveDirection = direction
+#Устанавливает относительные координаты
             if (direction == Nord || direction == Sud)
-                coord[1]=coord[1]+Counter(direction)
+                coordinate[1] = coordinate[1] + Counter(direction)
             else
-                coord[2]=coord[2]+Counter(direction)
+                coordinate[2]=coordinate[2]+Counter(direction)
             end
 
             direction = ChooseDirection(r,direction)
+#Проверяет сделан ли поворот
             if (CheckTurn(direction, previousMoveDirection) == 1)
                 turns[1] = turns[1] + 1
             end
@@ -93,8 +96,8 @@ function AroundBorder(r::AbstractRobot)::Int8
         else 
             ChooseDirection(r,direction)
         end                                                      
-        
-        if (StopCondition(coord,startDirection,direction))
+#Проверяет условие остановки
+        if (StopCondition(coordinate,startDirection,direction))
             return Summary(turns)
             break
         end  
@@ -102,11 +105,8 @@ function AroundBorder(r::AbstractRobot)::Int8
 
 end
 
-function Empty()
-    return Nothing
-end
 
-function Counter(side::HorizonSide)::Int32
+function Counter(side::HorizonSide)::Int32 #Возвращает 1 или -1 в зависимости от движения по координатам
     if (side==Nord)
     return 1
 
@@ -121,12 +121,10 @@ function Counter(side::HorizonSide)::Int32
     end
     if(side==West)
     return -1
-
     end
-
 end
 
-function TurnRight(side::HorizonSide)::HorizonSide
+function TurnRight(side::HorizonSide)::HorizonSide #Возвращает направление "повёрнутое" направо  
 
     if(side==Nord)
     return Ost::HorizonSide
@@ -146,26 +144,26 @@ function TurnRight(side::HorizonSide)::HorizonSide
 
 end
 
-function TurnLeft(side::HorizonSide)
+function TurnLeft(side::HorizonSide) #Возвращает направление "повёрнутое" налево
     if(side == Nord)
-        return West
+        return West::HorizonSide
     end
 
     if(side == West)
-        return Sud
+        return Sud::HorizonSide
     end
 
     if(side == Sud)
-        return Ost
+        return Ost::HorizonSide
     end
 
     if(side == Ost)
-        return Nord
+        return Nord::HorizonSide
     end
     
 end
 
-function ChooseFirstDirection(r::Robot)::HorizonSide
+function ChooseFirstDirection(r::Robot)::HorizonSide #Выбирает первое направление движения
     direction::HorizonSide = Nord
     while (!isborder(r,TurnRight(direction)))
         direction = TurnRight(direction)
@@ -173,7 +171,7 @@ function ChooseFirstDirection(r::Robot)::HorizonSide
     return direction
 end
 
-function ChooseDirection(r::Robot,direction::HorizonSide)::HorizonSide
+function ChooseDirection(r::Robot,direction::HorizonSide)::HorizonSide # Выбор направления движения
     if(isborder(r,direction) && isborder(r,TurnRight(direction)) && isborder(r,TurnLeft(direction)))
         return TurnRight(TurnRight(direction))
     end
@@ -181,12 +179,15 @@ function ChooseDirection(r::Robot,direction::HorizonSide)::HorizonSide
     if(!isborder(r,direction) && isborder(r,TurnRight(direction)))
         return direction
     end
+
     if(!isborder(r,direction) && !isborder(r,TurnRight(direction)))
         return TurnRight(direction)
     end
+
     if(isborder(r,direction) && isborder(r,TurnRight(direction)))
         return TurnLeft(direction)
     end
+
     if(isborder(r,direction) && !isborder(r,TurnRight(direction)))
         return TurnRight(direction)
     end
